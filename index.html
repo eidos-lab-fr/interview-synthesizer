@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Synthesizer</title>
+<style>:root{--bg:#f7f7f5;--panel:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e3e3de;--accent:#3d5afe;--accent-ink:#fff;--good:#1a7f4b;--bad:#b3261e;--warn:#9a6700;--soft:#eef0ff;--radius:10px;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1d1d1b;--ink:#ececE6;--muted:#9a9a93;--line:#30302c;--accent:#8c9eff;--accent-ink:#11122b;--good:#5fd39a;--bad:#ff8a80;--warn:#e3b341;--soft:#23264a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1080px;margin:0 auto;padding:28px 16px 64px}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:24px;margin:0;letter-spacing:-.01em}
+h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+p.lead{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:16px}
+@media(min-width:820px){.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}.side{grid-template-columns:340px 1fr}}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:120px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.field{margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{border-color:transparent;color:var(--muted);padding:4px 8px}
+button:disabled{opacity:.5;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td input{padding:5px 7px}
+.scroll{overflow-x:auto}
+.stat{font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0}
+.muted{color:var(--muted)}.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--accent)}
+.out{white-space:pre-wrap;word-wrap:break-word;font-size:14.5px;min-height:120px}
+.out.mono,code{font-family:var(--mono);font-size:13px}
+.note{font-size:13px;color:var(--muted)}
+footer{margin-top:28px;font-size:13px;color:var(--muted)}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div>
+      <h1>Interview Synthesizer</h1>
+      <p class="lead">Paste your user interview notes and get the themes, the supporting quotes and the opportunities they point to. Every quote is taken word for word from your notes.</p>
+    </div>
+  </header>
+  <section class="panel" aria-label="API settings">
+  <div class="grid cols-3">
+    <div><label for="apiKey">Anthropic API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+    <div><label for="model">Model</label><select id="model" data-models></select></div>
+    <div><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:14px"><input id="rememberKey" type="checkbox" style="width:auto"> Remember the key on this device</label></div>
+  </div>
+  <p class="note" style="margin:10px 0 0">Your key stays in this browser and is sent only to api.anthropic.com. This page has no server. Use a key with a spending limit.</p>
+</section>
+
+  <div class="grid cols-2">
+    <section class="panel">
+      <h2>Interview notes</h2>
+      <div class="field"><label for="goal">What were you trying to learn? (optional)</label><input id="goal" placeholder="Why trial users do not invite their team"></div>
+      <div class="field"><label for="notes">Notes or transcripts. Separate interviews with a line containing only ---</label>
+        <textarea id="notes" style="min-height:300px" placeholder="Interview 1 — Head of Ops, 40 people&#10;&quot;I looked for the invite button for a good minute.&quot;&#10;Uses the tool alone, exports PDFs for the team.&#10;---&#10;Interview 2 — …"></textarea></div>
+      <p id="count" class="note"></p>
+      <div class="grid cols-2">
+        <div class="field"><label for="lang">Language of the synthesis</label><select id="lang"><option>English</option><option>French</option><option>Spanish</option></select></div>
+        <div class="field" style="align-self:end"><button id="run" class="primary" style="width:100%">Synthesize</button></div>
+      </div>
+      <p class="note">Remove names and anything confidential before pasting: the notes are sent to the Anthropic API with your key.</p>
+    </section>
+    <section class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <h2 style="margin:0">Synthesis</h2>
+        <span class="row"><button id="copy" disabled>Copy</button><button id="save" disabled>Download .md</button></span>
+      </div>
+      <div id="out" class="out muted">The synthesis will appear here.</div>
+      <p id="meta" class="note" role="status"></p>
+    </section>
+  </div>
+  <footer>MIT license · © 2026 Eidos Lab · Runs entirely in your browser.</footer>
+</main>
+<script type="module">
+import Anthropic from "https://esm.sh/@anthropic-ai/sdk@1.8.0";
+
+// Prices in USD per million tokens, used for the cost estimate only.
+const MODELS = {
+  "claude-opus-5-5": { label: "Claude Opus 5.5", input: 4, output: 20 },
+  "claude-sonnet-5-5": { label: "Claude Sonnet 5.5", input: 2, output: 10 },
+  "claude-haiku-5-5": { label: "Claude Haiku 5.5", input: 0.1, output: 0.5 },
+};
+const KEY_NAME = "anthropic-api-key";
+const $ = (id) => document.getElementById(id);
+
+function readKey() {
+  try { return sessionStorage.getItem(KEY_NAME) || localStorage.getItem(KEY_NAME) || ""; } catch { return ""; }
+}
+function saveKey(value, remember) {
+  try {
+    sessionStorage.setItem(KEY_NAME, value);
+    if (remember) localStorage.setItem(KEY_NAME, value); else localStorage.removeItem(KEY_NAME);
+  } catch { /* storage unavailable: the key lives in the input only */ }
+}
+
+// Wires the key bar that every page includes.
+function initKeyBar() {
+  const input = $("apiKey"), remember = $("rememberKey");
+  input.value = readKey();
+  try { remember.checked = !!localStorage.getItem(KEY_NAME); } catch { /* ignore */ }
+  const persist = () => saveKey(input.value.trim(), remember.checked);
+  input.addEventListener("change", persist);
+  remember.addEventListener("change", persist);
+  for (const select of document.querySelectorAll("select[data-models]")) {
+    select.innerHTML = Object.entries(MODELS).map(([id, m]) => `<option value="${id}">${m.label}</option>`).join("");
+  }
+}
+
+function estimateCost(model, usage) {
+  const price = MODELS[model];
+  if (!price || !usage) return 0;
+  return (usage.input_tokens * price.input + usage.output_tokens * price.output) / 1e6;
+}
+
+function explain(error) {
+  if (error instanceof Anthropic.AuthenticationError) return "The API key was rejected. Check it and try again.";
+  if (error instanceof Anthropic.PermissionDeniedError) return "This API key is not allowed to use that model.";
+  if (error instanceof Anthropic.RateLimitError) return "Rate limit reached. Wait a moment and try again.";
+  if (error instanceof Anthropic.BadRequestError) return "The request was refused: " + error.message;
+  if (error instanceof Anthropic.APIConnectionError) return "Could not reach the Anthropic API. Check your connection.";
+  if (error instanceof Anthropic.APIError) return `API error ${error.status ?? ""}: ${error.message}`;
+  return error?.message || String(error);
+}
+
+/**
+ * Streams one request to Claude, straight from the browser with the visitor's own key.
+ * Returns { text, usage, model, ms, firstTokenMs, cost, note }.
+ */
+async function runClaude({ model, system, user, onText }) {
+  const apiKey = $("apiKey").value.trim();
+  if (!apiKey) throw new Error("Add your Anthropic API key first.");
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+  const params = { model, max_tokens: 64000, system, messages: [{ role: "user", content: user }] };
+  const started = performance.now();
+  let firstTokenMs = null, text = "";
+  try {
+    // Opus and Sonnet can decline a request: let the API retry on a fallback model.
+    const stream = model === "claude-haiku-5-5"
+      ? client.messages.stream(params)
+      : client.beta.messages.stream({ ...params, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
+    stream.on("text", (delta) => {
+      if (firstTokenMs === null) firstTokenMs = performance.now() - started;
+      text += delta;
+      onText?.(delta, text);
+    });
+    const message = await stream.finalMessage();
+    let note = "";
+    if (message.stop_reason === "refusal") note = "The model declined this request.";
+    else if (message.stop_reason === "max_tokens") note = "The answer was cut off at the length limit.";
+    return {
+      text, note, usage: message.usage, model: message.model,
+      ms: performance.now() - started, firstTokenMs,
+      cost: estimateCost(model, message.usage),
+    };
+  } catch (error) {
+    throw new Error(explain(error));
+  }
+}
+
+function download(name, content, type = "text/plain") {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+initKeyBar();
+
+const SYSTEM = `You synthesize user interview notes for a product team. The team will act on your synthesis, so it must be faithful to what participants actually said.
+
+Write Markdown with these sections:
+1. What we learned: three to five sentences, the answer to the research question if one is given.
+2. Themes: for each theme, a short name, one sentence describing it, how many of the interviews mention it (for example "3 of 5"), and one to three supporting quotes.
+3. Opportunities: customer needs, pains or desires that follow from the themes, phrased from the customer's point of view, strongest evidence first. These are problems to solve, not features.
+4. Surprises and contradictions: where participants disagree with each other or with the team's stated assumption.
+5. What we still do not know: questions the interviews leave open.
+
+Rules:
+- A quote must be copied word for word from the notes, in its original language, and attributed to its interview (for example "Interview 2"). If the notes paraphrase instead of quoting, present it as an observation, not as a quote.
+- Count interviews honestly. If a theme comes from a single participant, say so.
+- Do not add findings, numbers or user needs that are not in the notes. Do not recommend features.
+- If the notes are too thin to support a section, say that plainly in that section.
+- Interviews are separated by lines containing only "---". If there is no separator, treat the notes as one interview.
+- No introduction and no closing remarks.`;
+
+let last = "";
+const interviews = () => $("notes").value.split(/^\s*---\s*$/m).filter((s) => s.trim()).length;
+$("notes").addEventListener("input", () => {
+  const n = interviews(), words = $("notes").value.trim().split(/\s+/).filter(Boolean).length;
+  $("count").textContent = n ? `${n} interview${n > 1 ? "s" : ""} · ${words.toLocaleString("en-US")} words` : "";
+});
+
+$("run").addEventListener("click", async () => {
+  const notes = $("notes").value.trim();
+  if (notes.length < 80) { $("meta").textContent = "Paste your notes first: a few lines at least."; return; }
+  const goal = $("goal").value.trim();
+  const user = `${goal ? `Research question: ${goal}\n\n` : ""}Number of interviews: ${interviews()}
+
+<notes>
+${notes}
+</notes>
+
+Write the synthesis in ${$("lang").value}. Keep quotes in their original language.`;
+  const out = $("out");
+  $("run").disabled = true; $("copy").disabled = $("save").disabled = true;
+  out.classList.remove("muted"); out.textContent = ""; $("meta").textContent = "Reading the notes…";
+  try {
+    const result = await runClaude({ model: $("model").value, system: SYSTEM, user, onText: (_d, text) => { out.textContent = text; } });
+    last = result.text;
+    $("meta").textContent = `${result.note ? result.note + " " : ""}${(result.ms / 1000).toFixed(1)} s · ${result.usage.input_tokens} tokens in, ${result.usage.output_tokens} out · about $${result.cost.toFixed(4)}`;
+    $("copy").disabled = $("save").disabled = !last;
+  } catch (error) {
+    $("meta").textContent = error.message;
+    if (!out.textContent) { out.classList.add("muted"); out.textContent = "The synthesis will appear here."; }
+  } finally { $("run").disabled = false; }
+});
+$("copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText(last); $("meta").textContent = "Copied."; } catch { download("synthesis.md", last, "text/markdown"); } });
+$("save").addEventListener("click", () => download("interview-synthesis.md", last, "text/markdown"));
+</script>
+</body>
+</html>
