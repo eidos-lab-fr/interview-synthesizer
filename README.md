@@ -1,8 +1,8 @@
 # Interview Synthesizer
 
 Turn user interview notes into themes, verbatim quotes and opportunities with Claude.
-**[Try it live](https://eidos-lab-fr.github.io/interview-synthesizer/)**
 
+**[Website](https://eidos-lab-fr.github.io/interview-synthesizer/about.html)** · **[Open the app](https://eidos-lab-fr.github.io/interview-synthesizer/)**
 
 ## Features
 
